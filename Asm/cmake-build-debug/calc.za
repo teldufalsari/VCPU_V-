@@ -1,0 +1,135 @@
+//постфиксный калькулятор
+
+:input
+in ax
+
+	cmp ax 61 //=  while ax != '='
+	je print
+	
+	cmp ax 10
+	je input	//if ax = '\n' break
+	
+	cmp ax 32
+	je input
+	
+	cmp ax 43 //+
+	je sum
+	
+	cmp ax 45 //-
+	je subtr
+	
+	cmp ax 42 //*
+	je mlt
+	
+	cmp ax 47 ///
+	je dvd
+	
+	jmp inputa //else scanf("%d", &ax)
+
+
+:sum
+	add
+	jmp input
+
+:subtr
+	sub
+	jmp input
+
+:mlt
+	mul
+	jmp input
+
+:dvd
+	div
+	jmp input
+
+:inputa
+	push ax
+	push 48
+	sub
+	
+:inputdigit
+	in ax
+	cmp ax 10
+	je input
+	
+	cmp ax 32
+	je input
+	
+	push 10
+	mul
+	push ax
+	push 48
+	sub
+	add
+	
+	jmp inputdigit
+	
+	
+	
+:print
+pop ax
+
+mov bx 0
+
+cmp ax -1
+ja frac
+
+push 45
+out
+
+push ax
+push -1
+mul
+pop ax
+
+:frac
+	push ax
+	push 10
+	push ax 
+	push 10
+
+	div
+	mul
+	sub
+
+	push 48
+	add
+
+	//на вершине стека лежит последняя цифра (символ) значения регистра ax
+
+	push ax
+	push 10
+	div
+	pop ax
+	
+	// в ax лежит это число без последней цифры
+	
+	push bx
+	push 1  //bx++
+	add
+	pop bx
+
+	
+	cmp ax 0
+	
+	je outp
+	jmp frac
+	
+:outp
+	
+	out
+	
+	push bx
+	push 1
+	sub		//bx--
+	pop bx
+	
+	cmp bx 0
+	
+	je exit
+	jmp outp
+
+:exit
+
+hlt
