@@ -1,30 +1,30 @@
 //постфиксный калькулятор
 
 :input
-in ax
+in &2
 
-	cmp ax 61 //=  while ax != '='
+	cmp &2 61 //=  while &2 != '='
 	je print
 	
-	cmp ax 10
-	je input	//if ax = '\n' break
+	cmp &2 10
+	je input	//if &2 = '\n' break
 	
-	cmp ax 32
+	cmp &2 32
 	je input
 	
-	cmp ax 43 //+
+	cmp &2 43 //+
 	je sum
 	
-	cmp ax 45 //-
+	cmp &2 45 //-
 	je subtr
 	
-	cmp ax 42 //*
+	cmp &2 42 //*
 	je mlt
 	
-	cmp ax 47 ///
+	cmp &2 47 ///
 	je dvd
 	
-	jmp inputa //else scanf("%d", &ax)
+	jmp inputa //else scanf("%d", &&2)
 
 
 :sum
@@ -44,21 +44,21 @@ in ax
 	jmp input
 
 :inputa
-	push ax
+	push &2
 	push 48
 	sub
 	
 :inputdigit
-	in ax
-	cmp ax 10
+	in &2
+	cmp &2 10
 	je input
 	
-	cmp ax 32
+	cmp &2 32
 	je input
 	
 	push 10
 	mul
-	push ax
+	push &2
 	push 48
 	sub
 	add
@@ -68,25 +68,25 @@ in ax
 	
 	
 :print
-pop ax
+pop &2
 
 mov bx 0
 
-cmp ax -1
+cmp &2 -1
 ja frac
 
 push 45
 out
 
-push ax
+push &2
 push -1
 mul
-pop ax
+pop &2
 
 :frac
-	push ax
+	push &2
 	push 10
-	push ax 
+	push &2 
 	push 10
 
 	div
@@ -96,14 +96,14 @@ pop ax
 	push 48
 	add
 
-	//на вершине стека лежит последняя цифра (символ) значения регистра ax
+	//на вершине стека лежит последняя цифра (символ) значения регистра &2
 
-	push ax
+	push &2
 	push 10
 	div
-	pop ax
+	pop &2
 	
-	// в ax лежит это число без последней цифры
+	// в &2 лежит это число без последней цифры
 	
 	push bx
 	push 1  //bx++
@@ -111,7 +111,7 @@ pop ax
 	pop bx
 
 	
-	cmp ax 0
+	cmp &2 0
 	
 	je outp
 	jmp frac
