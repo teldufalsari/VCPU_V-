@@ -13,11 +13,11 @@
 #include <map>
 #include "service.h"
 
-enum Exceptions {NOT_MEM = -4, NOARG = -3, NOTADDR = -2, NOTREG = -1, UCMD = 1, EXARG, EXNL, EXREG, EXLBL, ULBL, DLBL};
+enum Exceptions {NOTREG = -1, UCMD = 1, EXARG, EXNL, EXREG, EXLBL, ULBL, DLBL};
 
 enum Commands {PUSH1 = 1, POP0, POP1,  MOV2, CMP2, ADD0, SUB0, MUL0, DIV0, IN0, IN1, OUT0, OUT1, JA, JB, JE, JMP, HLT};
 
-enum Unit_types {CMD = 1, REG, INT, LBL, REG_MEM, INT_MEM};
+enum Unit_types {CMD = 1, REG, INT, LBL};
 
 const char DELIMS[] = " \t\r\n";
 
@@ -70,9 +70,6 @@ private:
     char get_reg_num(const char* str);
     char is_num(const char* str);
     char is_comment(const char* str);
-    char get_addr(const char* str, unsigned short* addr_ptr);
-    char get_value(const char* str, short* val_ptr);
-    char is_mem(const char* str);
 
 
 public:

@@ -106,16 +106,16 @@ void Build::write_pop()
 
     write(CMD, POP1);
 
-    unsigned short dst = 0;
-    char type = get_addr(arg, &dst);
+    char reg_num = get_reg_num(arg);
 
-    if ((type == REG) || (type == REG_MEM) || (type == INT_MEM))
-        write(type, dst);
+    if (reg_num != NOTREG)
+        write(REG, reg_num);
+
+    else if (is_num(arg))
+        write(INT, (short int) strtol(arg, nullptr, 10));
+
     else
-    {
-        cast(EXREG, cur_line + 1);
-        return;
-    }
+        cast(EXARG, cur_line + 1);
 
     check_str();
 }
@@ -140,16 +140,14 @@ void Build::write_push()
         return;
     }
 
-    short value = 0;
-    char type = get_value(arg, &value);
+    char reg_num = get_reg_num(arg);
 
-    if ((type == REG) || (type == INT) || (type == REG_MEM) || (type == INT_MEM))
-        write(type, value);
+    if (reg_num != NOTREG)
+        write(REG, reg_num);
+    else if (is_num(arg))
+        write(INT, (short int) strtol(arg, nullptr, 10));
     else
-    {
         cast(EXARG, cur_line + 1);
-        return;
-    }
 
     check_str();
 }
@@ -167,29 +165,29 @@ void Build::write_mov()
     write(CMD, MOV2);
 
     char* arg1 = Strtok(nullptr, DELIMS);
-    char* arg2 = Strtok(nullptr, DELIMS);
 
-    unsigned short dst = 0;
-    char type1 = get_addr(arg1, &dst);
+    char reg1_num = get_reg_num(arg1);
 
-    if ((type1 == REG) || (type1 == REG_MEM) || (type1 == INT_MEM))
-        write(type1, dst);
-    else
+    if (reg1_num == NOTREG)
     {
         cast(EXREG, cur_line + 1);
         return;
     }
 
-    short value = 0;
-    char type2 = get_value(arg2, &value);
+    write(REG, reg1_num);
 
-    if ((type2 == REG) || (type2 == INT) || (type2 == REG_MEM) || (type2 == INT_MEM))
-        write(type2, value);
+    char* arg2 = Strtok(nullptr, DELIMS);
+
+    char reg2_num = get_reg_num(arg2);
+
+    if (reg2_num != NOTREG)
+        write(REG, reg2_num);
+
+    else if (is_num(arg2))
+        write(INT, (short int) strtol(arg2, nullptr, 10));
+
     else
-    {
         cast(EXARG, cur_line + 1);
-        return;
-    }
 
     check_str();
 }
@@ -200,25 +198,31 @@ void Build::write_cmp()
 
     char* arg1 = Strtok(nullptr, DELIMS);
     char* arg2 = Strtok(nullptr, DELIMS);
-    short value1 = 0, value2 = 0;
 
-    char type1 = get_value(arg1, &value1);
-    if ((type1 == REG) || (type1 == INT) || (type1 == REG_MEM) || (type1 == INT_MEM))
-        write(type1, value1);
+    char reg1_num = get_reg_num(arg1);
+
+    if (reg1_num != NOTREG)
+        write(REG, reg1_num);
+
+    else if (is_num(arg2))
+        write(INT, (short int) strtol(arg2, nullptr, 10));
+
     else
     {
         cast(EXARG, cur_line + 1);
         return;
     }
 
-    char type2 = get_value(arg2, &value2);
-    if ((type2 == REG) || (type2 == INT) || (type2 == REG_MEM) || (type2 == INT_MEM))
-        write(type2, value2);
+    char reg2_num = get_reg_num(arg2);
+
+    if (reg2_num != NOTREG)
+        write(REG, reg2_num);
+
+    else if (is_num(arg2))
+        write(INT, (short int) strtol(arg2, nullptr, 10));
+
     else
-    {
         cast(EXARG, cur_line + 1);
-        return;
-    }
 
     check_str();
 }
@@ -258,16 +262,18 @@ void Build::write_in()
 
     write(CMD, IN1);
 
-    unsigned short dst = 0;
-    char type = get_addr(arg, &dst);
+    char reg_num = get_reg_num(arg);
 
-    if ((type == REG) || (type == REG_MEM) || (type == INT_MEM))
-        write(type, dst);
-    else
+    if (reg_num != NOTREG)
     {
-        cast(EXREG, cur_line + 1);
+        write(REG, reg_num);
         return;
     }
+
+    if (is_num(arg))
+        write(INT, (short) strtol(arg, nullptr, 10));
+    else
+        cast(EXARG, cur_line + 1);
 
     check_str();
 }
@@ -283,16 +289,18 @@ void Build::write_out()
 
     write(CMD, OUT1);
 
-    short value = 0;
-    char type = get_value(arg, &value);
+    char reg_num = get_reg_num(arg);
 
-    if ((type == REG) || (type == INT) || (type == REG_MEM) || (type == INT_MEM))
-        write(type, value);
-    else
+    if (reg_num != NOTREG)
     {
-        cast(EXARG, cur_line + 1);
+        write(REG, reg_num);
         return;
     }
+
+    if (is_num(arg))
+        write(INT, (short) strtol(arg, nullptr, 10));
+    else
+        cast(EXARG, cur_line + 1);
 
     check_str();
 }
@@ -319,7 +327,7 @@ void Build::write_jump(short int jump_cond)
         return;
     }
 
-    write(LBL, lbl->second);
+    write(LBL, lbl->second);         //I know it's implementation-defined, but my cpu recognises LBL arguments as unsigned, so it's ok to be gay.
 
     check_str();
 }
@@ -493,71 +501,9 @@ void Build::link_jumps()
     {
         if (unit.type == LBL)
         {
-            (unit.value = labels_addr_list[unit.value]);
+            (unit.value = labels_addr_list[unit.value]);     //I know it's implementation-defined, but my cpu recognises LBL arguments as unsigned, so it's ok.
         }
     }
-}
-
-char Build::get_addr(const char *str, unsigned short *addr_ptr)
-{
-    short address = get_reg_num(str);
-    if (address != NOTREG)
-    {
-        *addr_ptr = address;
-        return REG;
-    }
-    else if (is_mem(str) == REG_MEM)
-    {
-        *addr_ptr = get_reg_num(str + 1);
-        return REG_MEM;
-    }
-    else if (is_mem(str) == INT_MEM)
-    {
-        *addr_ptr = strtol(str + 1, nullptr, 10);
-        return INT_MEM;
-    }
-
-    return NOTADDR;
-}
-
-char Build::get_value(const char *str, short* val_ptr)
-{
-    short value = get_reg_num(str);
-    if (value != NOTREG)
-    {
-        *val_ptr = value;
-        return REG;
-    }
-    else if (is_num(str))
-    {
-        *val_ptr = (short) strtol(str, nullptr, 10);
-        return INT;
-    }
-    else if (is_mem(str) == REG_MEM)
-    {
-        *val_ptr = get_reg_num(str + 1);
-        return REG_MEM;
-    }
-    else if (is_mem(str) == INT_MEM)
-    {
-        *val_ptr = (short) strtol(str + 1, nullptr, 10);
-        return INT_MEM;
-    }
-        return NOARG;
-}
-
-char Build::is_mem(const char *str)
-{
-    if (str[0] != '&')
-        return NOT_MEM;
-
-    if (get_reg_num(str + 1) != NOTREG)
-        return REG_MEM;
-
-    if (is_num(str + 1))
-        return INT_MEM;
-
-    return NOT_MEM;
 }
 
 void WriteInFile(std::vector<Code_Unit> &code, const char* filename)
