@@ -188,6 +188,20 @@ void execute ()
             break;
         }
 
+        case CALL:
+        {
+            StackPush(&Stack, (signed short) (edi + 3));
+            edi = (unsigned short) pick_arg();
+            break;
+        }
+
+        case RET:
+        {
+            StackTop(&Stack, &edi);
+            StackPop(&Stack);
+            break;
+        }
+
         default:
             return;
     }
@@ -197,7 +211,7 @@ short pick_arg()
 {
     switch (instr[edi])
     {
-        case REG:
+    case REG: case INT_MEM: case REG_MEM:
         {
             return *pick_addr();
         }
@@ -215,6 +229,7 @@ short pick_arg()
         }
 
         case LBL:
+        case FUNC:
         {
             edi++;
 
@@ -225,6 +240,13 @@ short pick_arg()
 
             return arg;
         }
+
+        case REG_STK:
+            return *(Stack.data + Stack.size - 1 - *pick_addr());
+
+        case INT_STK:
+            return *(Stack.data + Stack.size - 1 - pick_arg());
+
         default:
             return 0;
     }
@@ -232,31 +254,77 @@ short pick_arg()
 
 short* pick_addr()
 {
-    if (instr[edi++] != REG)
-        return NULL;
+    char type = instr[edi++];
 
-    short reg_n = 0;
-
-    *(((char*) &reg_n) + 0) = instr[edi++];
-    *(((char*) &reg_n) + 1) = instr[edi++];
-
-    switch (reg_n)
+    switch (type)
     {
-        case 1:
-            return &ax;
+        case REG:
+        {
+            short reg_n = 0;
 
-        case 2:
-            return &bx;
+            *(((char*) &reg_n) + 0) = instr[edi++];
+            *(((char*) &reg_n) + 1) = instr[edi++];
 
-        case 3:
-            return &cx;
+            switch (reg_n)
+            {
+                case 1:
+                    return &ax;
 
-        case 4:
-            return &dx;
+                case 2:
+                    return &bx;
+
+                case 3:
+                    return &cx;
+
+                case 4:
+                    return &dx;
+
+                default:
+                    return NULL;
+            }
+        }
+
+        case REG_MEM:
+        {
+            unsigned short reg_n = 0;
+
+            *(((char*) &reg_n) + 0) = instr[edi++];
+            *(((char*) &reg_n) + 1) = instr[edi++];
+
+            switch (reg_n)
+            {
+                case 1:
+                    return RAM + ax;
+
+                case 2:
+                    return RAM + bx;
+
+                case 3:
+                    return RAM + cx;
+
+                case 4:
+                    return RAM + dx;
+
+                default:
+                    return NULL;
+            }
+        }
+
+        case INT_MEM:
+        {
+            unsigned short pointer = 0;
+
+            *(((char*) &pointer) + 0) = instr[edi++];
+            *(((char*) &pointer) + 1) = instr[edi++];
+
+            return RAM + pointer;
+        }
 
         default:
             return NULL;
     }
+
+
 }
 
 void run (char* code)
@@ -264,6 +332,8 @@ void run (char* code)
     instr = code;
 
     StackInit(&Stack, 4096);
+
+    RAM = (short*) malloc(4096);
 
     ax = cx = bx = dx = 0;
     cmp = 0;
@@ -274,4 +344,5 @@ void run (char* code)
         ;
 
     StackDestroy(&Stack);
+    free(RAM);
 }

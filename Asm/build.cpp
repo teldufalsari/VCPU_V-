@@ -43,6 +43,9 @@ void Build::translate_str(char *str)
     else if (word[0] == ':')
         def_label(word);
 
+    else if (word[0] == '#')
+        def_function(word);
+
     else if (StrCmp(word, "push") == 0)
         write_push();
 
@@ -87,6 +90,12 @@ void Build::translate_str(char *str)
 
     else if (StrCmp(word, "hlt") == 0)
         write_hlt();
+
+    else if (StrCmp(word, "call") == 0)
+        write_call();
+
+    else if (StrCmp(word, "ret") == 0)
+        write_ret();
 
     else
     {
@@ -431,6 +440,24 @@ void Build::cast(char err, size_t line)
             break;
         }
 
+        case UFUNC:
+        {
+            fprintf(stderr, "Error in line %zu: calling undefined function.\n", line);
+            break;
+        }
+
+        case DFUNC:
+        {
+            fprintf(stderr, "Error in line %zu: double-defined function.\n", line);
+            break;
+        }
+
+        case EXFUNC:
+        {
+            fprintf(stderr, "Error in line %zu: expected function name after \"#\".\n", line);
+            break;
+        }
+
         default:
         {
             fprintf(stderr, "Error in line %zu: non-code symbols.\n", line);
@@ -460,13 +487,22 @@ void Build::fill_dictionary()
     char* word = nullptr;
 
     for (size_t i = 0; i < total_lines; i++)
+    {
         if (*(word = SkipDelims(lines[i], DELIMS, Strlen(DELIMS))) == ':')
         {
             char state = add_label(word);
             cast(state, i + 1);
         }
 
+        if (*(word = SkipDelims(lines[i], DELIMS, Strlen(DELIMS))) == '#')
+        {
+            char state = add_function(word);
+            cast(state, i + 1);
+        }
+    }
+
     labels_addr_list = (unsigned short int*) std::calloc(labels_dic.size(), sizeof(unsigned short int));
+    functions_addr_list = (unsigned short int*) std::calloc (functions_dic.size(), sizeof(unsigned short int));
 }
 
 char Build::add_label(char *string)
@@ -489,11 +525,16 @@ char Build::add_label(char *string)
 
 void Build::link_jumps()
 {
-    for (auto& unit: *code) //add appropriate loop here!!
+    for (auto& unit: *code)
     {
         if (unit.type == LBL)
         {
             (unit.value = labels_addr_list[unit.value]);
+        }
+
+        if (unit.type == FUNC)
+        {
+            unit.value = functions_addr_list[unit.value];
         }
     }
 }
@@ -543,6 +584,17 @@ char Build::get_value(const char *str, short* val_ptr)
         *val_ptr = (short) strtol(str + 1, nullptr, 10);
         return INT_MEM;
     }
+    else if (is_stk(str) == REG_STK)
+    {
+        *val_ptr = get_reg_num(str + 1);
+        return REG_STK;
+    }
+    else if (is_stk(str) == INT_STK)
+    {
+        *val_ptr = (short) strtol(str + 1, nullptr, 10);
+        return INT_STK;
+    }
+    else
         return NOARG;
 }
 
@@ -550,6 +602,7 @@ char Build::is_mem(const char *str)
 {
     if (str[0] != '&')
         return NOT_MEM;
+        // это не мем, это моя жизнб
 
     if (get_reg_num(str + 1) != NOTREG)
         return REG_MEM;
@@ -558,6 +611,77 @@ char Build::is_mem(const char *str)
         return INT_MEM;
 
     return NOT_MEM;
+}
+
+char Build::add_function(char *string)
+{
+    char* name_tok = Strtok(string + 1, DELIMS);
+    if ((name_tok == nullptr) || (is_comment(name_tok)))
+        return EXFUNC;
+
+    std::string name(name_tok);
+
+    auto new_label = functions_dic.find(name);
+
+    if (new_label != functions_dic.end())
+        return DFUNC;
+
+    functions_dic[name] = functions_dic.size();
+
+    return 0;
+}
+
+void Build::def_function(char *string)
+{
+    std::string name (string + 1);
+
+    functions_addr_list[functions_dic[name]] = code->size() * 3;
+}
+
+void Build::write_call()
+{
+    write(CMD, CALL);
+
+    char* arg = Strtok(nullptr, DELIMS);
+
+    if ((arg == nullptr) || (is_comment(arg)))
+    {
+        cast(EXARG, cur_line + 1);
+        return;
+    }
+
+    std::string func_name (arg);
+
+    auto func = functions_dic.find(func_name);
+
+    if (func == functions_dic.end())
+    {
+        cast(ULBL, cur_line + 1);
+        return;
+    }
+
+    write(FUNC, func->second);
+
+    check_str();
+}
+
+void Build::write_ret()
+{
+    write(CMD, RET);
+}
+
+char Build::is_stk(const char *str)
+{
+    if (str[0] != '*')
+        return NOT_STK;
+
+    if (get_reg_num(str + 1) != NOTREG)
+        return REG_STK;
+
+    if (is_num(str + 1))
+        return INT_STK;
+
+    return NOT_STK;
 }
 
 void WriteInFile(std::vector<Code_Unit> &code, const char* filename)
