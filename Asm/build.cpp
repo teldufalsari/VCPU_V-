@@ -152,7 +152,7 @@ void Build::write_push()
     short value = 0;
     char type = get_value(arg, &value);
 
-    if ((type == REG) || (type == INT) || (type == REG_MEM) || (type == INT_MEM))
+    if ((type == REG) || (type == INT) || (type == REG_MEM) || (type == INT_MEM) || (type == REG_STK) || (type == INT_STK))
         write(type, value);
     else
     {
@@ -192,7 +192,7 @@ void Build::write_mov()
     short value = 0;
     char type2 = get_value(arg2, &value);
 
-    if ((type2 == REG) || (type2 == INT) || (type2 == REG_MEM) || (type2 == INT_MEM))
+    if ((type2 == REG) || (type2 == INT) || (type2 == REG_MEM) || (type2 == INT_MEM) || (type2 == REG_STK) || (type2 == INT_STK))
         write(type2, value);
     else
     {
@@ -212,7 +212,7 @@ void Build::write_cmp()
     short value1 = 0, value2 = 0;
 
     char type1 = get_value(arg1, &value1);
-    if ((type1 == REG) || (type1 == INT) || (type1 == REG_MEM) || (type1 == INT_MEM))
+    if ((type1 == REG) || (type1 == INT) || (type1 == REG_MEM) || (type1 == INT_MEM) || (type1 == REG_STK) || (type1 == INT_STK))
         write(type1, value1);
     else
     {
@@ -221,7 +221,7 @@ void Build::write_cmp()
     }
 
     char type2 = get_value(arg2, &value2);
-    if ((type2 == REG) || (type2 == INT) || (type2 == REG_MEM) || (type2 == INT_MEM))
+    if ((type2 == REG) || (type2 == INT) || (type2 == REG_MEM) || (type2 == INT_MEM) || (type2 == REG_STK) || (type2 == INT_STK))
         write(type2, value2);
     else
     {
@@ -295,7 +295,7 @@ void Build::write_out()
     short value = 0;
     char type = get_value(arg, &value);
 
-    if ((type == REG) || (type == INT) || (type == REG_MEM) || (type == INT_MEM))
+    if ((type == REG) || (type == INT) || (type == REG_MEM) || (type == INT_MEM) || (type == REG_STK) || (type == INT_STK))
         write(type, value);
     else
     {

@@ -190,7 +190,7 @@ void execute ()
 
         case CALL:
         {
-            StackPush(&Stack, (signed short) (edi + 3));
+            StackPush(&Stack, (signed short) (edi + 2));
             edi = (unsigned short) pick_arg();
             break;
         }
@@ -216,20 +216,9 @@ short pick_arg()
             return *pick_addr();
         }
 
-        case INT:
-        {
-            edi++;
-
-            short arg = 0;
-
-            *(((char*) &arg) + 0) = instr[edi++];
-            *(((char*) &arg) + 1) = instr[edi++];
-
-            return arg;
-        }
-
         case LBL:
         case FUNC:
+        case INT:
         {
             edi++;
 
@@ -245,7 +234,16 @@ short pick_arg()
             return *(Stack.data + Stack.size - 1 - *pick_addr());
 
         case INT_STK:
-            return *(Stack.data + Stack.size - 1 - pick_arg());
+        {
+            edi++;
+
+            short arg = 0;
+
+            *(((char*) &arg) + 0) = instr[edi++];
+            *(((char*) &arg) + 1) = instr[edi++];
+
+            return *(Stack.data + Stack.size - 1 - arg);
+        }
 
         default:
             return 0;
