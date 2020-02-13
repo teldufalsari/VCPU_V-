@@ -188,6 +188,33 @@ void execute ()
             break;
         }
 
+        case JBE:
+            {
+                    if ((cmp == 0) || (cmp == -1))
+                        edi = (unsigned short) pick_arg();
+                    else
+                        edi += 3;
+                break;
+            }
+
+        case JAE:
+        {
+            if ((cmp == 0) || (cmp == 1))
+                edi = (unsigned short) pick_arg();
+            else
+                edi += 3;
+            break;
+        }
+
+        case JNE:
+        {
+            if ((cmp == -1) || (cmp == 1))
+                edi = (unsigned short) pick_arg();
+            else
+                edi += 3;
+            break;
+        }
+
         case CALL:
         {
             StackPush(&Stack, (signed short) (edi + 2));

@@ -97,6 +97,15 @@ void Build::translate_str(char *str)
     else if (StrCmp(word, "ret") == 0)
         write_ret();
 
+    else if (StrCmp(word, "jbe") == 0)
+        write_jump(JBE);
+
+    else if (StrCmp(word, "jae") == 0)
+        write_jump(JAE);
+
+    else if (StrCmp(word, "jne") == 0)
+        write_jump(JNE);
+
     else
     {
         cast(UCMD, cur_line + 1);
